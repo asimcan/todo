@@ -22,8 +22,9 @@ var (
 
 func CmdList(db *database) cli.Command {
 	return cli.Command{
-		Name:  "list",
-		Usage: "List pending tasks",
+		Name:    "list",
+		Aliases: []string{"ls"},
+		Usage:   "List pending tasks",
 		Action: func(c *cli.Context) error {
 			var list []model.Task
 			if err := db.pending().Find(&list).Error; err != nil {
