@@ -32,6 +32,7 @@ func main() {
 
 	app.Commands = []cli.Command{
 		CmdAdd(db),
+		CmdDo(db),
 	}
 
 	if err := app.Run(os.Args); err != nil {

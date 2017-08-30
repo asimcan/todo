@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/fatih/color"
@@ -49,6 +50,34 @@ func CmdAdd(db *database) cli.Command {
 	}
 }
 
+func CmdDo(db *database) cli.Command {
+	return cli.Command{
+		Name:      "do",
+		Usage:     "Mark a task as completed",
+		ArgsUsage: "[task number]",
+		Action: func(c *cli.Context) error {
+			task, err := findTask(db, c.Args())
+			if err != nil {
+				return err
+			}
+
+			if task.Completed != nil {
+				return errors.New("task already completed")
+			}
+
+			now := model.Now()
+			err = db.Model(&task).Updates(&model.Metadata{Completed: &now}).Error
+			if err != nil {
+				return errors.Wrap(err, "could not update task")
+			}
+
+			fmt.Printf("marked as completed <%s>\n",
+				color.CyanString("%s", task.ID))
+			return nil
+		},
+	}
+}
+
 func parseInput(input string) (*model.Content, error) {
 	var (
 		index   = duePattern.FindStringSubmatchIndex(input)
@@ -69,4 +98,24 @@ func parseInput(input string) (*model.Content, error) {
 	}
 
 	return &content, nil
+}
+
+func findTask(db *database, args []string) (*model.Task, error) {
+	if len(args) < 1 {
+		return nil, errors.New("too few arguments")
+	}
+
+	num, err := strconv.Atoi(args[0])
+	if err != nil {
+		return nil, errors.Wrap(err, "could not parse task number")
+	}
+
+	var task model.Task
+	err = db.pending().
+		Offset(num - 1).
+		Limit(1).
+		First(&task).
+		Error
+
+	return &task, err
 }
