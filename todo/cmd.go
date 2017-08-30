@@ -15,8 +15,45 @@ import (
 )
 
 var (
-	duePattern = regexp.MustCompile(`(?i)\s*\bdue\s+(\S+)$`)
+	duePattern      = regexp.MustCompile(`(?i)\s*\bdue\s+(\S+)$`)
+	keywordsPattern = regexp.MustCompile(`(\+\S+)\b`)
 )
+
+func CmdList(db *database) cli.Command {
+	return cli.Command{
+		Name:  "list",
+		Usage: "List pending tasks",
+		Action: func(c *cli.Context) error {
+			var list []model.Task
+			if err := db.pending().Find(&list).Error; err != nil {
+				return err
+			}
+
+			for i, task := range list {
+				check := ' '
+				if task.Completed != nil {
+					check = 'x'
+				}
+
+				desc := keywordsPattern.ReplaceAllStringFunc(task.Description,
+					func(s string) string {
+						return color.MagentaString("%s", s)
+					})
+
+				due := formatDueDate(task.Due.Time(), true)
+
+				fmt.Printf("%s %s %s %s\n",
+					color.CyanString("%2d", i+1),
+					color.YellowString("(%c)", check),
+					color.CyanString("%11s", due),
+					desc,
+				)
+			}
+
+			return nil
+		},
+	}
+}
 
 func CmdAdd(db *database) cli.Command {
 	return cli.Command{
