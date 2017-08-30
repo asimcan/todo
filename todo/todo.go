@@ -33,6 +33,7 @@ func main() {
 	app.Commands = []cli.Command{
 		CmdList(db),
 		CmdAdd(db),
+		CmdEdit(db),
 		CmdDo(db),
 	}
 

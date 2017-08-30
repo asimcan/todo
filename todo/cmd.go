@@ -8,6 +8,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/jinzhu/now"
+	"github.com/peterh/liner"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 
@@ -81,6 +82,55 @@ func CmdAdd(db *database) cli.Command {
 			}
 
 			fmt.Printf("added task <%s>\n",
+				color.CyanString("%s", task.ID))
+			return nil
+		},
+	}
+}
+
+func CmdEdit(db *database) cli.Command {
+	return cli.Command{
+		Name:      "edit",
+		Usage:     "Edit an existing task",
+		ArgsUsage: "[task number]",
+		Action: func(c *cli.Context) error {
+			task, err := findTask(db, c.Args())
+			if err != nil {
+				return err
+			}
+
+			line := liner.NewLiner()
+			line.SetCtrlCAborts(true)
+
+			defer line.Close()
+
+			taskString := fmt.Sprintf("%s due %s",
+				task.Description,
+				formatDueDate(task.Due.Time(), false))
+
+			input, err := line.PromptWithSuggestion("", taskString, -1)
+			if err != nil {
+				return errors.Wrap(err, "edit canceled")
+			}
+
+			edited, err := parseInput(input)
+			if err != nil {
+				return err
+			}
+
+			update := model.Task{
+				Metadata: model.Metadata{
+					Modified: model.Now(),
+				},
+				Content: *edited,
+			}
+
+			err = db.Model(task).Updates(&update).Error
+			if err != nil {
+				return errors.Wrap(err, "could not update task")
+			}
+
+			fmt.Printf("edited task <%s>\n",
 				color.CyanString("%s", task.ID))
 			return nil
 		},
