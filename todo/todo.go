@@ -30,7 +30,9 @@ func main() {
 		},
 	}
 
-	app.Commands = []cli.Command{}
+	app.Commands = []cli.Command{
+		CmdAdd(db),
+	}
 
 	if err := app.Run(os.Args); err != nil {
 		color.Red("%s\n", err)
