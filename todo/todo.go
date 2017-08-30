@@ -35,6 +35,7 @@ func main() {
 		CmdAdd(db),
 		CmdEdit(db),
 		CmdDo(db),
+		CmdArchive(db),
 	}
 
 	if err := app.Run(os.Args); err != nil {

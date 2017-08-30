@@ -165,6 +165,26 @@ func CmdDo(db *database) cli.Command {
 	}
 }
 
+func CmdArchive(db *database) cli.Command {
+	return cli.Command{
+		Name:  "archive",
+		Usage: "Archive completed tasks",
+		Action: func(c *cli.Context) error {
+			res := db.Model(&model.Task{}).
+				Where("archived is null").
+				Where("completed is not null").
+				UpdateColumn("archived", model.Now())
+			if err := res.Error; err != nil {
+				return errors.Wrap(err, "could not archive tasks")
+			}
+
+			fmt.Printf("%s tasks archived\n",
+				color.CyanString("%d", res.RowsAffected))
+			return nil
+		},
+	}
+}
+
 func parseInput(input string) (*model.Content, error) {
 	var (
 		index   = duePattern.FindStringSubmatchIndex(input)
