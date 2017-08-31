@@ -31,6 +31,7 @@ func CmdList(db *database) cli.Command {
 				return err
 			}
 
+			now := model.Now()
 			for i, task := range list {
 				check := ' '
 				if task.Completed != nil {
@@ -43,11 +44,15 @@ func CmdList(db *database) cli.Command {
 					})
 
 				due := formatDueDate(task.Due.Time(), true)
+				dueColor := color.CyanString
+				if task.Due < now {
+					dueColor = color.New(color.BgYellow).Sprintf
+				}
 
 				fmt.Printf("%s %s %s %s\n",
 					color.CyanString("%2d", i+1),
 					color.YellowString("(%c)", check),
-					color.CyanString("%11s", due),
+					dueColor("%11s", due),
 					desc,
 				)
 			}
